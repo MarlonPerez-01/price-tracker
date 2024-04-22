@@ -1,3 +1,29 @@
-# This file stores configurations for your Shopify app.
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-scopes = "write_products"
+client_id = "8c46eb73b5a1725c15650fc5ff2c9f11"
+name = "price-tracker"
+handle = "price-tracker-3"
+application_url = "https://artists-belle-minimum-acc.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "quickstart-fc2ba88f.myshopify.com"
+include_config_on_deploy = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products,read_products"
+
+[auth]
+redirect_urls = [
+  "https://artists-belle-minimum-acc.trycloudflare.com/auth/callback",
+  "https://artists-belle-minimum-acc.trycloudflare.com/auth/shopify/callback",
+  "https://artists-belle-minimum-acc.trycloudflare.com/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-04"
+
+[pos]
+embedded = false
