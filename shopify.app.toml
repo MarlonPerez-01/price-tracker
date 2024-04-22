@@ -3,7 +3,7 @@
 client_id = "8c46eb73b5a1725c15650fc5ff2c9f11"
 name = "price-tracker"
 handle = "price-tracker-3"
-application_url = "https://artists-belle-minimum-acc.trycloudflare.com"
+application_url = "https://resort-an-attractions-objects.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,13 +13,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,read_products"
+scopes = "read_products,write_products"
 
 [auth]
 redirect_urls = [
-  "https://artists-belle-minimum-acc.trycloudflare.com/auth/callback",
-  "https://artists-belle-minimum-acc.trycloudflare.com/auth/shopify/callback",
-  "https://artists-belle-minimum-acc.trycloudflare.com/api/auth/callback"
+  "https://resort-an-attractions-objects.trycloudflare.com/auth/callback",
+  "https://resort-an-attractions-objects.trycloudflare.com/auth/shopify/callback",
+  "https://resort-an-attractions-objects.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

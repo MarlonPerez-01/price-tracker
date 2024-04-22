@@ -23,3 +23,30 @@ model Session {
   accessToken String
   userId      BigInt?
 }
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  email        String         @unique
+  createdAt    DateTime       @default(now())
+  Subscription Subscription[]
+}
+
+model Product {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  currentPrice Decimal        @default(0.00)
+  Subscription Subscription[]
+}
+
+model Subscription {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  productId Int
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  status    Boolean   @default(true)
+
+  User    User    @relation(fields: [userId], references: [id])
+  Product Product @relation(fields: [productId], references: [id])
+}
