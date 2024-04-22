@@ -1,0 +1,140 @@
+<form id="form-price-tracker" class="price-tracker__form">
+  <input id="name" class="form-input" type="text" name="name" placeholder="Ingresa tu nombre" aria-label="Name"
+         required>
+  <span id="name-error" class="error"></span>
+
+  <input id="email" class="form-input" type="email" name="email" placeholder="Ingresa tu correo" aria-label="Email"
+         required>
+  <span id="email-error" class="error"></span>
+
+  <button id="btnSend" class="shopify-payment-button__button shopify-payment-button__button--unbranded" type="button">
+    Envíame actualización de precio
+  </button>
+  <span id="general-error" class="error"></span>
+</form>
+
+<script>
+  async function submitUserDetails(name, email) {
+    const url = 'https://localhost/api';
+    const body = JSON.stringify({ name, email });
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' // FIXME: No debe ser utilizado en producción
+      },
+      body
+    };
+
+    // Se valida que el nombre no esté vacío
+    if (!name || name.trim().length === 0) {
+      throw new Error('Ingresa un nombre válido');
+    }
+
+    // Se valida que el correo tenga un formato correcto
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!email || !emailRegex.test(email)) {
+      throw new Error('Ingresa un correo electrónico válido');
+    }
+
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) {
+        alert('¡Gracias por suscribirte! Te enviaremos actualizaciones de precio pronto.');
+      } else {
+        throw new Error('Hubo un error. Por favor, inténtalo de nuevo.');
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  async function handleButtonClick() {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const nameErrorSpan = document.getElementById('name-error');
+    const emailErrorSpan = document.getElementById('email-error');
+    const generalErrorSpan = document.getElementById('general-error');
+
+    // Se limpian los mensajes de error previos
+    nameErrorSpan.textContent = '';
+    emailErrorSpan.textContent = '';
+    generalErrorSpan.textContent = '';
+
+    try {
+      await submitUserDetails(name, email);
+    } catch (error) {
+      if (error.message === 'Ingresa un nombre válido') {
+        nameErrorSpan.textContent = error.message;
+      } else if (error.message === 'Ingresa un correo electrónico válido') {
+        emailErrorSpan.textContent = error.message;
+      } else {
+        generalErrorSpan.textContent = 'Hubo un error. Por favor, inténtalo de nuevo.';
+        console.error(error.message);
+      }
+    }
+  }
+
+  document.getElementById('btnSend').addEventListener('click', handleButtonClick);
+</script>
+
+<style>
+  .price-tracker__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 6rem;
+  }
+
+  @media (min-width: 472px) {
+    .price-tracker__form {
+      max-width: 62%;
+    }
+  }
+
+  @media (min-width: 748px) {
+    .price-tracker__form {
+      max-width: 90%;
+    }
+  }
+
+  .form-input {
+    border: 1px solid #000;
+    border-radius: 5px;
+    height: 50px;
+    line-height: normal;
+    color: #282828;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    user-select: auto;
+    padding: 0 6px 0 12px;
+  }
+
+  .price-tracker__form input:focus-visible {
+    outline: none;
+    box-shadow: none !important;
+  }
+
+  .error {
+    font-size: 0.8em;
+    color: red;
+    margin-bottom: 0.5rem;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Price Tracker",
+  "target": "section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Producto",
+      "autofill": true
+    }
+  ]
+}
+{% endschema %}
