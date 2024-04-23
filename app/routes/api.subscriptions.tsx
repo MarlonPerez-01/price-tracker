@@ -40,16 +40,16 @@ export async function action({ request }) {
             });
         }
 
-        // Se busca el producto por id
+        // Se busca el producto por id de Shopify
         let product = await db.product.findUnique({
-            where: { id: productId },
+            where: { idShopify: productId.toString() },
         });
 
         // Si el producto no existe, se crea
         if (!product) {
             product = await db.product.create({
                 data: {
-                    id: productId,
+                    idShopify: productId.toString(),
                     name: productName,
                     currentPrice: productPrice,
                 },
@@ -90,6 +90,7 @@ export async function action({ request }) {
             message: '¡Suscripción creada con éxito!',
             data: subscription,
         });
+
         return await cors(request, response, {
             origin: '*',
             methods: ['GET', 'POST'],

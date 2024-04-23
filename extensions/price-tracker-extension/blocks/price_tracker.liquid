@@ -14,19 +14,7 @@
 </form>
 
 <script>
-  async function submitUserDetails(name, email) {
-    const url = 'https://localhost/api';
-    const body = JSON.stringify({ name, email });
-
-    const options = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*' // FIXME: No debe ser utilizado en producción
-      },
-      body
-    };
-
+  async function submitUserDetails(name, email, product) {
     // Se valida que el nombre no esté vacío
     if (!name || name.trim().length === 0) {
       throw new Error('Ingresa un nombre válido');
@@ -39,6 +27,30 @@
     }
 
     try {
+      const url = 'https://campbell-leu-remembered-stops.trycloudflare.com/api/subscriptions';
+
+      // Se obtienen los detalles del producto
+      const productDetails = {{ product | json }};
+
+      console.log(productDetails);
+
+      const product = {
+        id: productDetails.id,
+        name: productDetails.title,
+        price: productDetails.variants[0].price
+      };
+
+      const body = JSON.stringify({ name, email, product });
+
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*' // FIXME: No debe ser utilizado en producción
+        },
+        body
+      };
+
       const response = await fetch(url, options);
       if (response.ok) {
         alert('¡Gracias por suscribirte! Te enviaremos actualizaciones de precio pronto.');
@@ -46,6 +58,7 @@
         throw new Error('Hubo un error. Por favor, inténtalo de nuevo.');
       }
     } catch (error) {
+      alert('Hubo un error. Por favor, inténtalo de nuevo.');
       console.error(error.message);
     }
   }
@@ -138,3 +151,5 @@
   ]
 }
 {% endschema %}
+
+

@@ -3,7 +3,7 @@
 client_id = "8c46eb73b5a1725c15650fc5ff2c9f11"
 name = "price-tracker"
 handle = "price-tracker-3"
-application_url = "https://scored-initiative-gasoline-combo.trycloudflare.com"
+application_url = "https://campbell-leu-remembered-stops.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://scored-initiative-gasoline-combo.trycloudflare.com/auth/callback",
-  "https://scored-initiative-gasoline-combo.trycloudflare.com/auth/shopify/callback",
-  "https://scored-initiative-gasoline-combo.trycloudflare.com/api/auth/callback"
+  "https://campbell-leu-remembered-stops.trycloudflare.com/auth/callback",
+  "https://campbell-leu-remembered-stops.trycloudflare.com/auth/shopify/callback",
+  "https://campbell-leu-remembered-stops.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
