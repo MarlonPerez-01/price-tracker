@@ -41,12 +41,13 @@ model Product {
 }
 
 model Subscription {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  productId Int
-  startDate DateTime  @default(now())
-  endDate   DateTime?
-  status    Boolean   @default(true)
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  productId         Int
+  startDate         DateTime  @default(now())
+  endDate           DateTime?
+  notificationCount Int       @default(0)
+  status            Boolean   @default(true)
 
   User    User    @relation(fields: [userId], references: [id])
   Product Product @relation(fields: [productId], references: [id])

@@ -20,6 +20,16 @@ const shopify = shopifyApp({
     distribution: AppDistribution.AppStore,
     restResources,
     webhooks: {
+        PRODUCTS_UPDATE: {
+            deliveryMethod: DeliveryMethod.Http,
+            callbackUrl: '/webhooks',
+            callback: async (topic, shop, body, webhookId) => {
+                console.log('---- Product update-----');
+                const payload = JSON.parse(body);
+                console.log(payload);
+                console.log('---- /Product update-----');
+            },
+        },
         APP_UNINSTALLED: {
             deliveryMethod: DeliveryMethod.Http,
             callbackUrl: '/webhooks',
