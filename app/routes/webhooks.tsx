@@ -1,6 +1,10 @@
 import type { ActionFunctionArgs } from '@remix-run/node';
 import { authenticate } from '../shopify.server';
 import db from '../db.server';
+import { PriceEmail } from '~/routes/emails/priceEmail';
+import { render } from '@react-email/components';
+import { json } from '@remix-run/react';
+import nodemailer from 'nodemailer';
 
 export const action = async ({ request }: ActionFunctionArgs) => {
     const { topic, shop, session, admin, payload } =
@@ -14,6 +18,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (topic) {
         case 'PRODUCTS_UPDATE':
             console.log('PRODUCTS_UPDATE');
+            console.log(payload);
 
             // Se extrae el id y el precio del producto del payload
             const productId = payload.id;
@@ -29,7 +34,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             }
 
             const currentPriceDb = product.currentPrice.toNumber();
-            const productPriceShopify = parseFloat(productPrice);
+            const productPriceShopify = Number(productPrice);
 
             if (currentPriceDb === productPriceShopify) {
                 console.info('El precio no ha cambiado');
@@ -57,12 +62,50 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 },
             });
 
-            // Se notifica a los usuarios sobre el cambio de precio
-            users.forEach((user) => {
-                console.log(
-                    `Usuario con email ${user.email} notificado sobre cambio de precio para el producto ${product.name} con precio ${productPrice}`,
-                );
+            // Configuracion de nodemailer
+            const transporter = nodemailer.createTransport({
+                port: Number(process.env.SMT_PORT),
+                host: process.env.SMT_HOST,
+                auth: {
+                    user: process.env.SMT_USER,
+                    pass: process.env.SMT_PASS,
+                },
+                secure: true,
             });
+
+            // Se notifica a los usuarios sobre el cambio de precio
+            for (const user of users) {
+                console.log(
+                    `Usuario con email ${user.email} notificado sobre cambio de precio para el producto ${product.name} con precio de $${productPrice}`,
+                );
+
+                try {
+                    const info = await transporter.sendMail({
+                        from: process.env.SMT_FROM,
+                        to: user.email,
+                        subject: '¡El precio de un producto ha cambiado!',
+                        html: render(
+                            <PriceEmail
+                                user={{
+                                    name: user.name,
+                                    email: user.email,
+                                }}
+                                product={{
+                                    name: product.name,
+                                    previousPrice: currentPriceDb,
+                                    currentPrice: productPriceShopify,
+                                }}
+                            />,
+                        ),
+                    });
+
+                    console.log('Correo enviado', info);
+                    json({ message: 'Correo enviado' }, 200);
+                } catch (error) {
+                    console.error('Error al enviar el correo', error);
+                    json({ error }, 400);
+                }
+            }
 
             break;
 
