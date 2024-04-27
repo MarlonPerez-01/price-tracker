@@ -2,7 +2,7 @@ import { json } from '@remix-run/node';
 import db from '../db.server';
 import { cors } from 'remix-utils/cors';
 
-// @ts-ignore
+//@ts-ignore
 export async function action({ request }) {
     // Se obtienen los datos del request
     let data = await request.json();
@@ -14,13 +14,67 @@ export async function action({ request }) {
     const { id: productId, name: productName, price: productPrice } = product;
 
     // Se verifica que todos los datos necesarios estén presentes
-    if (!name || !email || !productId || !productName || !productPrice) {
+    // Verifica que el nombre esté presente y sea una cadena
+    if (!name || typeof name !== 'string') {
+        return await cors(
+            request,
+            json(
+                {
+                    message: 'Falta el nombre o no es un string válido.',
+                },
+                { status: 400 },
+            ),
+        );
+    }
+
+    // Verifica que el email esté presente, sea una cadena y tenga un formato válido
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!email || typeof email !== 'string' || !emailRegex.test(email)) {
         return await cors(
             request,
             json(
                 {
                     message:
-                        'Faltan datos. Datos requeridos: nombre, email, productId, productName, productPrice',
+                        'Falta el email, no es un string válido o no tiene un formato válido.',
+                },
+                { status: 400 },
+            ),
+        );
+    }
+
+    // Verifica que el productId esté presente
+    if (!productId) {
+        return await cors(
+            request,
+            json(
+                {
+                    message: 'Falta el productId o no es un string válido.',
+                },
+                { status: 400 },
+            ),
+        );
+    }
+
+    // Verifica que el productName esté presente y sea un string
+    if (!productName || typeof productName !== 'string') {
+        return await cors(
+            request,
+            json(
+                {
+                    message: 'Falta el productName o no es un string válido.',
+                },
+                { status: 400 },
+            ),
+        );
+    }
+
+    // Verifica que el productPrice esté presente y sea un número
+    if (!productPrice || typeof productPrice !== 'number') {
+        return await cors(
+            request,
+            json(
+                {
+                    message: 'Falta el productPrice o no es un número válido.',
                 },
                 { status: 400 },
             ),
@@ -92,7 +146,7 @@ export async function action({ request }) {
         });
 
         return await cors(request, response, {
-            origin: '*',
+            origin: '*', // FIXME: Cambiar a la URL de la app en producción
             methods: ['GET', 'POST'],
             allowedHeaders: ['Content-Type'],
             credentials: false,
@@ -104,11 +158,11 @@ export async function action({ request }) {
         return await cors(
             request,
             json(
-                { message: 'Falló la creación de la suscripción.', error },
+                { message: 'Falló la creación de la suscripción.' },
                 { status: 500 },
             ),
             {
-                origin: '*',
+                origin: '*', // FIXME: Cambiar a la URL de la app en producción
                 methods: ['GET', 'POST'],
                 allowedHeaders: ['Content-Type'],
                 credentials: false,
