@@ -1,351 +1,231 @@
-import { useEffect } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
-import { json } from '@remix-run/node';
-import { useActionData, useNavigation, useSubmit } from '@remix-run/react';
-import {
-    Page,
-    Layout,
-    Text,
-    Card,
-    Button,
-    BlockStack,
-    Box,
-    List,
-    Link,
-    InlineStack,
-} from '@shopify/polaris';
+import { Button, DataTable, Link, Modal, Page } from '@shopify/polaris';
+import { json, LoaderFunctionArgs } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
 import { authenticate } from '../shopify.server';
+import db from '../db.server';
+import { useCallback, useState } from 'react';
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     await authenticate.admin(request);
 
-    return null;
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-    const { admin } = await authenticate.admin(request);
-    const color = ['Red', 'Orange', 'Yellow', 'Green'][
-        Math.floor(Math.random() * 4)
-    ];
-    const response = await admin.graphql(
-        `#graphql
-      mutation populateProduct($input: ProductInput!) {
-        productCreate(input: $input) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-          }
-        }
-      }`,
-        {
-            variables: {
-                input: {
-                    title: `${color} Snowboard`,
+    let users: any = await db.user.findMany({
+        select: {
+            name: true,
+            email: true,
+            createdAt: true,
+            Subscription: {
+                select: {
+                    notificationCount: true,
+                    startDate: true,
+                    Product: {
+                        select: {
+                            name: true,
+                            currentPrice: true,
+                        },
+                    },
                 },
             },
         },
-    );
-    const responseJson = await response.json();
-
-    const variantId =
-        responseJson.data!.productCreate!.product!.variants.edges[0]!.node!.id!;
-    const variantResponse = await admin.graphql(
-        `#graphql
-      mutation updateVariant($input: ProductVariantInput!) {
-        productVariantUpdate(input: $input) {
-          productVariant {
-            id
-            price
-            barcode
-            createdAt
-          }
-        }
-      }`,
-        {
-            variables: {
-                input: {
-                    id: variantId,
-                    price: Math.random() * 100,
-                },
-            },
-        },
-    );
-
-    const variantResponseJson = await variantResponse.json();
-
-    return json({
-        product: responseJson!.data!.productCreate!.product,
-        variant:
-            variantResponseJson!.data!.productVariantUpdate!.productVariant,
     });
+
+    users = users.map((user: any) => ({
+        ...user,
+        totalNotifications: user.Subscription.reduce(
+            (total: any, sub: { notificationCount: any }) =>
+                total + sub.notificationCount,
+            0,
+        ),
+        createdAt: new Date(user.createdAt),
+        name:
+            user.name.charAt(0).toUpperCase() +
+            user.name.slice(1).toLowerCase(),
+        subscriptions: user.Subscription.map((sub: any) => ({
+            productName: sub.Product.name,
+            price: sub.Product.currentPrice,
+            notificationCount: sub.notificationCount,
+            startDate: new Date(sub.startDate),
+        })),
+    }));
+
+    return json(users);
 };
 
 export default function Index() {
-    const nav = useNavigation();
-    const actionData = useActionData<typeof action>();
-    const submit = useSubmit();
-    const isLoading =
-        ['loading', 'submitting'].includes(nav.state) &&
-        nav.formMethod === 'POST';
-    const productId = actionData?.product?.id.replace(
-        'gid://shopify/Product/',
-        '',
+    const initialUsers: any = useLoaderData();
+    const [users, setUsers] = useState(initialUsers);
+    const [active, setActive] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<{
+        [key: string]: any;
+    } | null>(null);
+
+    const toggleModalActive = useCallback(
+        () => setActive((active) => !active),
+        [],
     );
 
-    useEffect(() => {
-        if (productId) {
-            shopify.toast.show('Product created');
-        }
-    }, [productId]);
-    const generateProduct = () => submit({}, { replace: true, method: 'POST' });
+    // Calcula el total de notificaciones enviadas
+    const totalNotifications = users.reduce(
+        (total: number, user: { totalNotifications: number }) =>
+            total + user.totalNotifications,
+        0,
+    );
+
+    // Mapea los datos de los usuarios para mostrarlos en la tabla
+    const rows = users.map((user: any) => [
+        user.name,
+        <Link key={user.email} url={`mailto:${user.email}`}>
+            {user.email}
+        </Link>,
+        user.totalNotifications,
+        new Date(user.createdAt).toLocaleDateString(),
+        <Button
+            key={user.email}
+            onClick={() => {
+                setSelectedUser(user);
+                toggleModalActive();
+            }}
+        >
+            Ver más
+        </Button>,
+    ]);
+
+    const headings = [
+        'Nombre',
+        'Correo Electrónico',
+        'Notificaciones Enviadas',
+        'Fecha de Ingreso',
+        'Acciones',
+    ];
+
+    // Ordena los registros por el total de notificaciones enviadas o por la fecha de ingreso
+    const handleSort = (
+        headingIndex: number,
+        direction: 'ascending' | 'descending',
+    ) => {
+        const sortedUsers = [...users].sort((a, b) => {
+            const valueA =
+                headingIndex === 2
+                    ? a.totalNotifications
+                    : new Date(a.createdAt);
+            const valueB =
+                headingIndex === 2
+                    ? b.totalNotifications
+                    : new Date(b.createdAt);
+
+            if (direction === 'ascending') {
+                return valueA > valueB ? 1 : -1;
+            } else {
+                return valueA < valueB ? 1 : -1;
+            }
+        });
+
+        setUsers(sortedUsers);
+    };
+
+    const boldStyle = { fontWeight: 'bold' };
 
     return (
         <Page>
-            <ui-title-bar title="Remix app template">
-                <button variant="primary" onClick={generateProduct}>
-                    Generate a product
-                </button>
-            </ui-title-bar>
-            <BlockStack gap="500">
-                <Layout>
-                    <Layout.Section>
-                        <Card>
-                            <BlockStack gap="500">
-                                <BlockStack gap="200">
-                                    <Text as="h2" variant="headingMd">
-                                        Congrats on creating a new Shopify app
-                                        🎉
-                                    </Text>
-                                    <Text variant="bodyMd" as="p">
-                                        This embedded app template uses{' '}
-                                        <Link
-                                            url="https://shopify.dev/docs/apps/tools/app-bridge"
-                                            target="_blank"
-                                            removeUnderline
+            <DataTable
+                columnContentTypes={['text', 'text', 'numeric', 'numeric']}
+                headings={headings}
+                rows={rows}
+                totals={['', '', totalNotifications, '']}
+                totalsName={{
+                    singular: 'Total',
+                    plural: 'Totales',
+                }}
+                showTotalsInFooter
+                sortable={[false, false, true, true]}
+                defaultSortDirection="ascending"
+                initialSortColumnIndex={2}
+                onSort={handleSort}
+                increasedTableDensity
+                hasZebraStripingOnData
+                stickyHeader
+                fixedFirstColumns={1}
+            />
+            <Modal
+                open={active}
+                onClose={toggleModalActive}
+                title="Detalles de la suscripción"
+                primaryAction={{
+                    content: 'Cerrar',
+                    onAction: toggleModalActive,
+                }}
+            >
+                <Modal.Section>
+                    {selectedUser && (
+                        <div>
+                            <h2 style={boldStyle}>Información del usuario</h2>
+                            <p>
+                                <span style={boldStyle}>Nombre: </span>
+                                {selectedUser.name}
+                            </p>
+                            <p>
+                                <span style={boldStyle}>
+                                    Correo Electrónico:{' '}
+                                </span>
+                                {selectedUser.email}
+                            </p>
+                            <p>
+                                <span style={boldStyle}>
+                                    Fecha de Ingreso:{' '}
+                                </span>
+                                {new Date(
+                                    selectedUser.createdAt,
+                                ).toLocaleDateString()}
+                            </p>
+                            <p>
+                                <span style={boldStyle}>
+                                    Total de notificaciones:{' '}
+                                </span>
+                                {selectedUser.totalNotifications}
+                            </p>
+                            <h2 style={{ marginTop: 20, ...boldStyle }}>
+                                Suscripciones activas
+                            </h2>
+                            <ul className="subscriptions">
+                                {selectedUser.subscriptions.map(
+                                    (sub: any, index: number) => (
+                                        <li
+                                            key={index}
+                                            style={{ marginBottom: 15 }}
                                         >
-                                            App Bridge
-                                        </Link>{' '}
-                                        interface examples like an{' '}
-                                        <Link
-                                            url="/app/additional"
-                                            removeUnderline
-                                        >
-                                            additional page in the app nav
-                                        </Link>
-                                        , as well as an{' '}
-                                        <Link
-                                            url="https://shopify.dev/docs/api/admin-graphql"
-                                            target="_blank"
-                                            removeUnderline
-                                        >
-                                            Admin GraphQL
-                                        </Link>{' '}
-                                        mutation demo, to provide a starting
-                                        point for app development.
-                                    </Text>
-                                </BlockStack>
-                                <BlockStack gap="200">
-                                    <Text as="h3" variant="headingMd">
-                                        Get started with products
-                                    </Text>
-                                    <Text as="p" variant="bodyMd">
-                                        Generate a product with GraphQL and get
-                                        the JSON output for that product. Learn
-                                        more about the{' '}
-                                        <Link
-                                            url="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-                                            target="_blank"
-                                            removeUnderline
-                                        >
-                                            productCreate
-                                        </Link>{' '}
-                                        mutation in our API references.
-                                    </Text>
-                                </BlockStack>
-                                <InlineStack gap="300">
-                                    <Button
-                                        loading={isLoading}
-                                        onClick={generateProduct}
-                                    >
-                                        Generate a product
-                                    </Button>
-                                    {actionData?.product && (
-                                        <Button
-                                            url={`shopify:admin/products/${productId}`}
-                                            target="_blank"
-                                            variant="plain"
-                                        >
-                                            View product
-                                        </Button>
-                                    )}
-                                </InlineStack>
-                                {actionData?.product && (
-                                    <>
-                                        <Text as="h3" variant="headingMd">
-                                            {' '}
-                                            productCreate mutation
-                                        </Text>
-                                        <Box
-                                            padding="400"
-                                            background="bg-surface-active"
-                                            borderWidth="025"
-                                            borderRadius="200"
-                                            borderColor="border"
-                                            overflowX="scroll"
-                                        >
-                                            <pre style={{ margin: 0 }}>
-                                                <code>
-                                                    {JSON.stringify(
-                                                        actionData.product,
-                                                        null,
-                                                        2,
-                                                    )}
-                                                </code>
-                                            </pre>
-                                        </Box>
-                                        <Text as="h3" variant="headingMd">
-                                            {' '}
-                                            productVariantUpdate mutation
-                                        </Text>
-                                        <Box
-                                            padding="400"
-                                            background="bg-surface-active"
-                                            borderWidth="025"
-                                            borderRadius="200"
-                                            borderColor="border"
-                                            overflowX="scroll"
-                                        >
-                                            <pre style={{ margin: 0 }}>
-                                                <code>
-                                                    {JSON.stringify(
-                                                        actionData.variant,
-                                                        null,
-                                                        2,
-                                                    )}
-                                                </code>
-                                            </pre>
-                                        </Box>
-                                    </>
+                                            <p className="subscription-name">
+                                                <span style={boldStyle}>
+                                                    Nombre del producto:{' '}
+                                                </span>
+                                                {sub.productName}
+                                            </p>
+                                            <p>
+                                                <span style={boldStyle}>
+                                                    Precio actual:{' '}
+                                                </span>
+                                                ${Number(sub.price).toFixed(2)}
+                                            </p>
+                                            <p>
+                                                <span style={boldStyle}>
+                                                    Notificaciones enviadas:{' '}
+                                                </span>
+                                                {sub.notificationCount}
+                                            </p>
+                                            <p>
+                                                <span style={boldStyle}>
+                                                    Fecha de suscripción:{' '}
+                                                </span>
+                                                {new Date(
+                                                    sub.startDate,
+                                                ).toLocaleDateString()}
+                                            </p>
+                                        </li>
+                                    ),
                                 )}
-                            </BlockStack>
-                        </Card>
-                    </Layout.Section>
-                    <Layout.Section variant="oneThird">
-                        <BlockStack gap="500">
-                            <Card>
-                                <BlockStack gap="200">
-                                    <Text as="h2" variant="headingMd">
-                                        App template specs
-                                    </Text>
-                                    <BlockStack gap="200">
-                                        <InlineStack align="space-between">
-                                            <Text as="span" variant="bodyMd">
-                                                Framework
-                                            </Text>
-                                            <Link
-                                                url="https://remix.run"
-                                                target="_blank"
-                                                removeUnderline
-                                            >
-                                                Remix
-                                            </Link>
-                                        </InlineStack>
-                                        <InlineStack align="space-between">
-                                            <Text as="span" variant="bodyMd">
-                                                Database
-                                            </Text>
-                                            <Link
-                                                url="https://www.prisma.io/"
-                                                target="_blank"
-                                                removeUnderline
-                                            >
-                                                Prisma
-                                            </Link>
-                                        </InlineStack>
-                                        <InlineStack align="space-between">
-                                            <Text as="span" variant="bodyMd">
-                                                Interface
-                                            </Text>
-                                            <span>
-                                                <Link
-                                                    url="https://polaris.shopify.com"
-                                                    target="_blank"
-                                                    removeUnderline
-                                                >
-                                                    Polaris
-                                                </Link>
-                                                {', '}
-                                                <Link
-                                                    url="https://shopify.dev/docs/apps/tools/app-bridge"
-                                                    target="_blank"
-                                                    removeUnderline
-                                                >
-                                                    App Bridge
-                                                </Link>
-                                            </span>
-                                        </InlineStack>
-                                        <InlineStack align="space-between">
-                                            <Text as="span" variant="bodyMd">
-                                                API
-                                            </Text>
-                                            <Link
-                                                url="https://shopify.dev/docs/api/admin-graphql"
-                                                target="_blank"
-                                                removeUnderline
-                                            >
-                                                GraphQL API
-                                            </Link>
-                                        </InlineStack>
-                                    </BlockStack>
-                                </BlockStack>
-                            </Card>
-                            <Card>
-                                <BlockStack gap="200">
-                                    <Text as="h2" variant="headingMd">
-                                        Next steps
-                                    </Text>
-                                    <List>
-                                        <List.Item>
-                                            Build an{' '}
-                                            <Link
-                                                url="https://shopify.dev/docs/apps/getting-started/build-app-example"
-                                                target="_blank"
-                                                removeUnderline
-                                            >
-                                                {' '}
-                                                example app
-                                            </Link>{' '}
-                                            to get started
-                                        </List.Item>
-                                        <List.Item>
-                                            Explore Shopify’s API with{' '}
-                                            <Link
-                                                url="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-                                                target="_blank"
-                                                removeUnderline
-                                            >
-                                                GraphiQL
-                                            </Link>
-                                        </List.Item>
-                                    </List>
-                                </BlockStack>
-                            </Card>
-                        </BlockStack>
-                    </Layout.Section>
-                </Layout>
-            </BlockStack>
+                            </ul>
+                        </div>
+                    )}
+                </Modal.Section>
+            </Modal>
         </Page>
     );
 }
