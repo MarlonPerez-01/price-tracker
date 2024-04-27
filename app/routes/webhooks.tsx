@@ -62,13 +62,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 },
             });
 
-            // Configuracion de nodemailer
             const transporter = nodemailer.createTransport({
-                port: Number(process.env.SMT_PORT),
-                host: process.env.SMT_HOST,
+                port: 465,
+                host: 'smtp.gmail.com',
                 auth: {
-                    user: process.env.SMT_USER,
-                    pass: process.env.SMT_PASS,
+                    user: 'marlonhurtado876@gmail.com',
+                    pass: 'adtaoyzmzwfgnufu',
                 },
                 secure: true,
             });

@@ -11,7 +11,8 @@ export async function action({ request }) {
     const name = data.name;
     const email = data.email;
     const product = data.product;
-    const { id: productId, name: productName, price: productPrice } = product;
+    let { id: productId, name: productName, price: productPrice } = product;
+    productPrice = productPrice / 100; // El precio se recibe en centavos
 
     // Se verifica que todos los datos necesarios estén presentes
     // Verifica que el nombre esté presente y sea una cadena
