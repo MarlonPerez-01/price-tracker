@@ -157,7 +157,9 @@ export default function Index() {
                 <Modal.Section>
                     {selectedUser && (
                         <div>
-                            <h2 style={boldStyle}>Información del usuario</h2>
+                            <h2 style={{ marginBottom: 15, ...boldStyle }}>
+                                Información del usuario
+                            </h2>
                             <p>
                                 <span style={boldStyle}>Nombre: </span>
                                 {selectedUser.name}
@@ -182,7 +184,7 @@ export default function Index() {
                                 </span>
                                 {selectedUser.totalNotifications}
                             </p>
-                            <h2 style={{ marginTop: 20, ...boldStyle }}>
+                            <h2 style={{ marginTop: 15, ...boldStyle }}>
                                 Suscripciones activas
                             </h2>
                             <ul className="subscriptions">
