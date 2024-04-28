@@ -80,7 +80,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
                 try {
                     const info = await transporter.sendMail({
-                        from: process.env.SMT_FROM,
+                        from: 'marlonhurtado876@gmail.com',
                         to: user.email,
                         subject: '¡El precio de un producto ha cambiado!',
                         html: render(
