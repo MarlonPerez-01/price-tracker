@@ -1,25 +1,25 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "8c46eb73b5a1725c15650fc5ff2c9f11"
+client_id = "0090146fff59777851a3009a417338b1"
 name = "price-tracker"
-handle = "price-tracker-3"
-application_url = "https://campbell-leu-remembered-stops.trycloudflare.com"
+handle = "price-tracker"
+application_url = "https://interact-second-magic-technician.trycloudflare.com"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-dev_store_url = "quickstart-fc2ba88f.myshopify.com"
+dev_store_url = "quickstart-95fda48a.myshopify.com"
 include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "read_products,write_products"
 
 [auth]
 redirect_urls = [
-  "https://campbell-leu-remembered-stops.trycloudflare.com/auth/callback",
-  "https://campbell-leu-remembered-stops.trycloudflare.com/auth/shopify/callback",
-  "https://campbell-leu-remembered-stops.trycloudflare.com/api/auth/callback"
+  "https://interact-second-magic-technician.trycloudflare.com/auth/callback",
+  "https://interact-second-magic-technician.trycloudflare.com/auth/shopify/callback",
+  "https://interact-second-magic-technician.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
