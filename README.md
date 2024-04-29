@@ -54,6 +54,7 @@ git clone https://github.com/MarlonPerez-01/price-tracker.git
 - Seleccionar actualizar url automáticamente en modo preview
 - Terminar proceso de la consola
 - En archivo .toml agregar en propiedad scopes "read_products,write_products"
+- Modificar la configuración del transporter de nodemailer en el fichero webhooks.tsx (opcional)
 - Ejecutar `npx prisma migrate dev` para ejecutar las migraciones
 - Ejecutar `shopify app deploy` para actualizar los scopes
 - Ejecutar `shopify app dev` para iniciar la aplicación
